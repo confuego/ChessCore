@@ -4,13 +4,13 @@ using System.Linq;
 
 namespace Chess {
   public class Board {
-    private Dictionary<Tuple<int, int>, Piece> _pieces { get; set; }
+    private Dictionary<Tuple<byte, byte>, Piece> _pieces { get; set; }
 
     public Board(Piece[] pieces) {
-      _pieces = pieces.ToDictionary(k => Tuple.Create(k.x, k.y), v => v);
+      _pieces = pieces.ToDictionary(k => Tuple.Create(k.X, k.Y), v => v);
     }
 
-    public bool IsTaken(int x, int y) {
+    public bool IsTaken(byte x, byte y) {
       return _pieces.ContainsKey(Tuple.Create(x, y));
     }
   }
