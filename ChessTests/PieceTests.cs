@@ -10,7 +10,7 @@ namespace ChessTests {
       Piece.Encode(PieceType.Knight, PieceColor.White, games, 0, 0, 0);
       Piece.Encode(PieceType.Queen, PieceColor.Black, games, 0, 0, 1);
 
-      Assert.Equal(193, games[0]);
+      Assert.Equal(210, games[0]);
     }
 
     [Fact]

@@ -1,17 +1,29 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Chess {
   public class Board {
-    private Dictionary<Tuple<byte, byte>, Piece> _pieces { get; set; }
-
-    public Board(Piece[] pieces) {
-      _pieces = pieces.ToDictionary(k => Tuple.Create(k.X, k.Y), v => v);
+    public byte[] Buffer;
+    public int Offset;
+    public Board(byte[] buffer, byte offset = 0) {
+      Buffer = buffer;
+      Offset = offset;
     }
 
-    public bool IsTaken(byte x, byte y) {
-      return _pieces.ContainsKey(Tuple.Create(x, y));
+    public Piece Get(byte x, byte y) {
+      return Piece.Decode(Buffer, Offset, x, y);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Move(byte x, byte y, byte toX, byte toY) {
+      var currPiece = Piece.Decode(Buffer, Offset, x, y);
+      var placeToMove = Piece.Decode(Buffer, Offset, toX, toY);
+      if (currPiece != null && currPiece.CanMove(toX, toY, this)) {
+        Piece.Clear(Buffer, Offset, x, y);
+        Piece.Encode(currPiece.Type, currPiece.Color, Buffer, Offset, toX, toY);
+      }
     }
   }
 }

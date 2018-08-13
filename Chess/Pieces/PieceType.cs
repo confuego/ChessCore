@@ -1,10 +1,10 @@
 namespace Chess {
   public enum PieceType : byte {
-    King = 0,
-    Queen = 1,
-    Rook = 2,
-    Bishop = 3,
-    Knight = 4,
-    Pawn = 5
+    King = 1,
+    Queen = 2,
+    Rook = 3,
+    Bishop = 4,
+    Knight = 5,
+    Pawn = 6
   }
 }
