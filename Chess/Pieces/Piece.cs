@@ -17,13 +17,35 @@ namespace Chess {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Encode(PieceType type, PieceColor color, byte[] buffer, byte index, PieceLocation loc) {
+    public static void Encode(PieceType type, PieceColor color, byte[] buffer, byte offset, byte x, byte y) {
+      var gameIndex = x * 8 + y;
+      var loc = gameIndex == 0 || gameIndex % 2 == 0 ? 4 : 0;
+      var index = (byte)Math.Floor((decimal)gameIndex / 2) + offset;
       var bytesToEncode = ((byte)type) | ((byte)color) << 3;
       buffer[index] |= (byte)(bytesToEncode << (byte)loc);
     }
 
-    public static T Decode<T>(byte piece)where T : Piece {
-      return (T)Activator.CreateInstance(typeof(T), 1, 2);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Piece Decode(byte[] buffer, byte offset, byte x, byte y) {
+      var gameIndex = x * 8 + y;
+      var loc = gameIndex == 0 || gameIndex % 2 == 0 ? 4 : 0;
+      var index = (byte)Math.Floor((decimal)gameIndex / 2) + offset;
+      var bytesToDecode = buffer[index] >> loc;
+      var pieceType = bytesToDecode & 7;
+      var color = (PieceColor)((bytesToDecode >> 3) & 1);
+
+      switch ((PieceType)pieceType) {
+        case PieceType.King:
+        case PieceType.Queen:
+        case PieceType.Rook:
+        case PieceType.Bishop:
+        case PieceType.Knight:
+          return null;
+        case PieceType.Pawn:
+          return new Pawn(x, y, color);
+        default:
+          return null;
+      }
     }
   }
 }
