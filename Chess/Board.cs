@@ -48,57 +48,53 @@ namespace Chess {
       Offset = 0;
     }
 
-    public void Move(byte x, byte y, byte toX, byte toY) {
-      var currPiece = Board.Get(this, x, y);
-      var placeToMove = Board.Get(this, toX, toY);
-      if (currPiece != null && currPiece.CanMove(toX, toY, this)) {
-        Board.Clear(this, x, y);
-        Board.Set(currPiece.Type, currPiece.Color, this, toX, toY);
+    private bool IsValid(byte x, byte y, byte toX, byte toY) {
+      var currPiece = Get(x, y);
+
+      switch (currPiece.Type) {
+        case PieceType.Rook:
+          return (x ^ toX) == 0 || (y ^ toY) == 0;
       }
+      return false;
+    }
+
+    public bool Move(byte x, byte y, byte toX, byte toY) {
+      var currPiece = Get(x, y);
+      var placeToMove = Get(toX, toY);
+      if (currPiece.Type != PieceType.Empty) {
+        Clear(x, y);
+        currPiece.X = toX;
+        currPiece.Y = toY;
+        Set(currPiece);
+      }
+      return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Set(PieceType type, PieceColor color, Board b, byte x, byte y) {
-      var gameIndex = x * 8 + y;
+    public void Set(Piece p) {
+      var gameIndex = p.X * 8 + p.Y;
       var loc = gameIndex == 0 || gameIndex % 2 == 0 ? 4 : 0;
-      var index = gameIndex >> 1 + b.Offset;
-      var bytesToEncode = ((byte)type) | ((byte)color) << 3;
-      b.Buffer[index] |= (byte)(bytesToEncode << loc);
+      var index = gameIndex >> 1 + Offset;
+      var bytesToEncode = ((byte)p.Type) | ((byte)p.Color) << 3;
+      Buffer[index] |= (byte)(bytesToEncode << loc);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Clear(Board b, byte x, byte y) {
+    public void Clear(byte x, byte y) {
       var gameIndex = x * 8 + y;
       var mask = gameIndex == 0 || gameIndex % 2 == 0 ? 15 : 240;
-      var index = gameIndex >> 1 + b.Offset;
-      b.Buffer[index] &= (byte)mask;
+      var index = gameIndex >> 1 + Offset;
+      Buffer[index] &= (byte)mask;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Piece Get(Board b, byte x, byte y) {
+    public Piece Get(byte x, byte y) {
       var gameIndex = x * 8 + y;
       var loc = gameIndex == 0 || gameIndex % 2 == 0 ? 4 : 0;
-      var index = gameIndex >> 1 + b.Offset;
-      var nibbleToDecode = b.Buffer[index] >> loc;
-      var pieceType = nibbleToDecode & 7;
-      var color = (PieceColor)((nibbleToDecode >> 3) & 1);
+      var index = gameIndex >> 1 + Offset;
+      var nibbleToDecode = Buffer[index] >> loc;
 
-      switch ((PieceType)pieceType) {
-        case PieceType.King:
-          return new King(x, y, color);
-        case PieceType.Queen:
-          return new Queen(x, y, color);
-        case PieceType.Rook:
-          return new Rook(x, y, color);
-        case PieceType.Bishop:
-          return new Bishop(x, y, color);
-        case PieceType.Knight:
-          return new Knight(x, y, color);
-        case PieceType.Pawn:
-          return new Pawn(x, y, color);
-        default:
-          return null;
-      }
+      return new Piece(x, y, (PieceColor)((nibbleToDecode >> 3) & 1), (PieceType)(nibbleToDecode & 7));
     }
   }
 }

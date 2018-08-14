@@ -8,45 +8,45 @@ namespace ChessTests {
       var board = new Board();
 
       Assert.NotNull(board);
-      Assert.IsType<Rook>(Board.Get(board, 0, 0));
-      Assert.IsType<Knight>(Board.Get(board, 0, 1));
-      Assert.IsType<Bishop>(Board.Get(board, 0, 2));
-      Assert.IsType<King>(Board.Get(board, 0, 3));
-      Assert.IsType<Queen>(Board.Get(board, 0, 4));
-      Assert.IsType<Bishop>(Board.Get(board, 0, 5));
-      Assert.IsType<Knight>(Board.Get(board, 0, 6));
-      Assert.IsType<Rook>(Board.Get(board, 0, 7));
+      Assert.Equal(PieceType.Rook, board.Get(0, 0).Type);
+      Assert.Equal(PieceType.Knight, board.Get(0, 1).Type);
+      Assert.Equal(PieceType.Bishop, board.Get(0, 2).Type);
+      Assert.Equal(PieceType.King, board.Get(0, 3).Type);
+      Assert.Equal(PieceType.Queen, board.Get(0, 4).Type);
+      Assert.Equal(PieceType.Bishop, board.Get(0, 5).Type);
+      Assert.Equal(PieceType.Knight, board.Get(0, 6).Type);
+      Assert.Equal(PieceType.Rook, board.Get(0, 7).Type);
 
-      Assert.IsType<Pawn>(Board.Get(board, 1, 0));
-      Assert.IsType<Pawn>(Board.Get(board, 1, 1));
-      Assert.IsType<Pawn>(Board.Get(board, 1, 2));
-      Assert.IsType<Pawn>(Board.Get(board, 1, 3));
-      Assert.IsType<Pawn>(Board.Get(board, 1, 4));
-      Assert.IsType<Pawn>(Board.Get(board, 1, 5));
-      Assert.IsType<Pawn>(Board.Get(board, 1, 6));
-      Assert.IsType<Pawn>(Board.Get(board, 1, 7));
+      Assert.Equal(board.Get(1, 0).Type, PieceType.Pawn);
+      Assert.Equal(board.Get(1, 1).Type, PieceType.Pawn);
+      Assert.Equal(board.Get(1, 2).Type, PieceType.Pawn);
+      Assert.Equal(board.Get(1, 3).Type, PieceType.Pawn);
+      Assert.Equal(board.Get(1, 4).Type, PieceType.Pawn);
+      Assert.Equal(board.Get(1, 5).Type, PieceType.Pawn);
+      Assert.Equal(board.Get(1, 6).Type, PieceType.Pawn);
+      Assert.Equal(board.Get(1, 7).Type, PieceType.Pawn);
 
-      Assert.IsType<Rook>(Board.Get(board, 7, 0));
-      Assert.IsType<Knight>(Board.Get(board, 7, 1));
-      Assert.IsType<Bishop>(Board.Get(board, 7, 2));
-      Assert.IsType<King>(Board.Get(board, 7, 3));
-      Assert.IsType<Queen>(Board.Get(board, 7, 4));
-      Assert.IsType<Bishop>(Board.Get(board, 7, 5));
-      Assert.IsType<Knight>(Board.Get(board, 7, 6));
-      Assert.IsType<Rook>(Board.Get(board, 7, 7));
+      Assert.Equal(board.Get(7, 0).Type, PieceType.Rook);
+      Assert.Equal(board.Get(7, 1).Type, PieceType.Knight);
+      Assert.Equal(board.Get(7, 2).Type, PieceType.Bishop);
+      Assert.Equal(board.Get(7, 3).Type, PieceType.King);
+      Assert.Equal(board.Get(7, 4).Type, PieceType.Queen);
+      Assert.Equal(board.Get(7, 5).Type, PieceType.Bishop);
+      Assert.Equal(board.Get(7, 6).Type, PieceType.Knight);
+      Assert.Equal(board.Get(7, 7).Type, PieceType.Rook);
 
-      Assert.IsType<Pawn>(Board.Get(board, 6, 0));
-      Assert.IsType<Pawn>(Board.Get(board, 6, 1));
-      Assert.IsType<Pawn>(Board.Get(board, 6, 2));
-      Assert.IsType<Pawn>(Board.Get(board, 6, 3));
-      Assert.IsType<Pawn>(Board.Get(board, 6, 4));
-      Assert.IsType<Pawn>(Board.Get(board, 6, 5));
-      Assert.IsType<Pawn>(Board.Get(board, 6, 6));
-      Assert.IsType<Pawn>(Board.Get(board, 6, 7));
+      Assert.Equal(board.Get(6, 0).Type, PieceType.Pawn);
+      Assert.Equal(board.Get(6, 1).Type, PieceType.Pawn);
+      Assert.Equal(board.Get(6, 2).Type, PieceType.Pawn);
+      Assert.Equal(board.Get(6, 3).Type, PieceType.Pawn);
+      Assert.Equal(board.Get(6, 4).Type, PieceType.Pawn);
+      Assert.Equal(board.Get(6, 5).Type, PieceType.Pawn);
+      Assert.Equal(board.Get(6, 6).Type, PieceType.Pawn);
+      Assert.Equal(board.Get(6, 7).Type, PieceType.Pawn);
 
       for (byte i = 2; i < 6; i++) {
         for (byte j = 0; j < 8; j++) {
-          Assert.Null(Board.Get(board, i, j));
+          Assert.Equal(board.Get(i, j).Type, PieceType.Empty);
         }
       }
     }
@@ -57,8 +57,8 @@ namespace ChessTests {
 
       board.Move(0, 0, 2, 0);
 
-      Assert.Null(Board.Get(board, 0, 0));
-      Assert.IsType<Rook>(Board.Get(board, 2, 0));
+      Assert.Equal(board.Get(0, 0).Type, PieceType.Empty);
+      Assert.Equal(board.Get(2, 0).Type, PieceType.Rook);
     }
 
   }
