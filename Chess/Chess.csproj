@@ -4,9 +4,4 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Include="./Pieces/Piece.cs" />
-    <Compile Include="./Pieces/Pawn.cs" />
-  </ItemGroup>
-
 </Project>
