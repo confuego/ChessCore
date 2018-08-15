@@ -48,30 +48,22 @@ namespace Chess {
       Offset = 0;
     }
 
-    private bool IsValid(byte x, byte y, byte toX, byte toY) {
-      var currPiece = Get(x, y);
-
-      switch (currPiece.Type) {
-        case PieceType.Rook:
-          return (x ^ toX) == 0 || (y ^ toY) == 0;
-      }
-      return false;
-    }
-
-    public bool Move(byte x, byte y, byte toX, byte toY) {
-      var currPiece = Get(x, y);
-      var placeToMove = Get(toX, toY);
-      if (currPiece.Type != PieceType.Empty) {
-        Clear(x, y);
-        currPiece.X = toX;
-        currPiece.Y = toY;
-        Set(currPiece);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private bool IsEmpty(byte start, byte end) {
+      var mask = start == 0 || start % 2 == 0 ? 240 : 15;
+      end >>= 1;
+      start >>= 1;
+      var cadence = (byte)end - start;
+      for (var i = start + cadence; i <= end && i >= 0; i += cadence) {
+        if ((Buffer[i] & mask) == 0) {
+          return false;
+        }
       }
       return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Set(Piece p) {
+    private void Set(Piece p) {
       var gameIndex = p.X * 8 + p.Y;
       var loc = gameIndex == 0 || gameIndex % 2 == 0 ? 4 : 0;
       var index = gameIndex >> 1 + Offset;
@@ -80,11 +72,53 @@ namespace Chess {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Clear(byte x, byte y) {
+    private void Clear(byte x, byte y) {
       var gameIndex = x * 8 + y;
       var mask = gameIndex == 0 || gameIndex % 2 == 0 ? 15 : 240;
       var index = gameIndex >> 1 + Offset;
       Buffer[index] &= (byte)mask;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool IsValid(Piece toMove, Piece moveTo) {
+
+      if (toMove.Type == PieceType.Empty ||
+        (toMove.Y == moveTo.Y && toMove.X == moveTo.X) ||
+        (toMove.Color == moveTo.Color && moveTo.Type != PieceType.Empty))
+        return false;
+
+      var fromIndex = (byte)(toMove.X * 8 + toMove.Y);
+      var toIndex = (byte)(moveTo.X * 8 + moveTo.Y);
+      var absDiff = (byte)(Math.Abs((byte)(fromIndex - toIndex)));
+      switch (toMove.Type) {
+        case PieceType.King:
+        case PieceType.Queen:
+          return ((toMove.X ^ moveTo.X) == 0 || (toMove.Y ^ moveTo.Y) == 0) || absDiff % 9 == 0 || absDiff % 7 == 0 && IsEmpty(fromIndex, toIndex);
+        case PieceType.Rook:
+          return (toMove.X ^ moveTo.X) == 0 || (toMove.Y ^ moveTo.Y) == 0 && IsEmpty(fromIndex, toIndex);
+        case PieceType.Bishop:
+          return absDiff % 9 == 0 || absDiff % 7 == 0 && IsEmpty(fromIndex, toIndex);
+        case PieceType.Knight:
+          return absDiff == 17 || absDiff == 10 || absDiff == 6 || absDiff == 15;
+        case PieceType.Pawn:
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool Move(byte x, byte y, byte toX, byte toY) {
+      var currPiece = Get(x, y);
+      var placeToMove = Get(toX, toY);
+      var canMove = IsValid(currPiece, placeToMove);
+      if (canMove) {
+        Clear(x, y);
+        currPiece.X = toX;
+        currPiece.Y = toY;
+        Set(currPiece);
+      }
+      return canMove;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
