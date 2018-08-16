@@ -5,8 +5,8 @@ using System.Runtime.CompilerServices;
 
 namespace Chess {
   public class Board {
-    public byte[] Buffer;
-    public int Offset;
+    private byte[] Buffer;
+    private int Offset;
 
     public static byte[] BUFFER = new byte[] {
       53,
@@ -49,13 +49,13 @@ namespace Chess {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool IsEmpty(byte start, byte end) {
+    private bool IsEmpty(byte start, byte end, sbyte cadence) {
       var mask = start == 0 || start % 2 == 0 ? 240 : 15;
       end >>= 1;
       start >>= 1;
-      var cadence = (byte)end - start;
+      cadence *= (end - start > 0) ? (sbyte)1 : (sbyte) - 1;
       for (var i = start + cadence; i <= end && i >= 0; i += cadence) {
-        if ((Buffer[i] & mask) == 0) {
+        if ((Buffer[i] & mask) != 0) {
           return false;
         }
       }
@@ -65,10 +65,15 @@ namespace Chess {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Set(Piece p) {
       var gameIndex = p.X * 8 + p.Y;
-      var loc = gameIndex == 0 || gameIndex % 2 == 0 ? 4 : 0;
+      var loc = 0;
+      var mask = 240;
+      if (gameIndex == 0 || gameIndex % 2 == 0) {
+        loc = 4;
+        mask = 15;
+      }
       var index = gameIndex >> 1 + Offset;
       var bytesToEncode = ((byte)p.Type) | ((byte)p.Color) << 3;
-      Buffer[index] |= (byte)(bytesToEncode << loc);
+      Buffer[index] = (byte)((Buffer[index] & mask) | (bytesToEncode << loc));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -89,15 +94,18 @@ namespace Chess {
 
       var fromIndex = (byte)(toMove.X * 8 + toMove.Y);
       var toIndex = (byte)(moveTo.X * 8 + moveTo.Y);
-      var absDiff = (byte)(Math.Abs((byte)(fromIndex - toIndex)));
+      var absDiff = (byte)(Math.Abs((byte)(toIndex - fromIndex)));
       switch (toMove.Type) {
         case PieceType.King:
         case PieceType.Queen:
-          return ((toMove.X ^ moveTo.X) == 0 || (toMove.Y ^ moveTo.Y) == 0) || absDiff % 9 == 0 || absDiff % 7 == 0 && IsEmpty(fromIndex, toIndex);
+          return (toMove.X ^ moveTo.X) == 0 ||
+            (toMove.Y ^ moveTo.Y) == 0 ||
+            absDiff % 9 == 0 ||
+            absDiff % 7 == 0 && IsEmpty(fromIndex, toIndex, 4);
         case PieceType.Rook:
-          return (toMove.X ^ moveTo.X) == 0 || (toMove.Y ^ moveTo.Y) == 0 && IsEmpty(fromIndex, toIndex);
+          return (toMove.X ^ moveTo.X) == 0 || (toMove.Y ^ moveTo.Y) == 0 && IsEmpty(fromIndex, toIndex, 4);
         case PieceType.Bishop:
-          return absDiff % 9 == 0 || absDiff % 7 == 0 && IsEmpty(fromIndex, toIndex);
+          return absDiff % 9 == 0 || absDiff % 7 == 0 && IsEmpty(fromIndex, toIndex, (absDiff % 9 == 0) ? (sbyte)9 : (sbyte)7);
         case PieceType.Knight:
           return absDiff == 17 || absDiff == 10 || absDiff == 6 || absDiff == 15;
         case PieceType.Pawn:
