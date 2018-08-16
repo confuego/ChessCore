@@ -73,5 +73,22 @@ namespace ChessTests {
       Assert.Equal(PieceType.Knight, board.Get(6, 5).Type);
     }
 
+    [Fact]
+    public void MovePawn() {
+      var board = new Board();
+
+      Assert.True(board.Move(1, 0, 3, 0));
+      Assert.False(board.Move(3, 0, 5, 0));
+
+      Assert.True(board.Move(6, 1, 4, 1));
+      Assert.False(board.Move(4, 1, 6, 1));
+
+      Assert.Equal(PieceType.Pawn, board.Get(3, 0).Type);
+      Assert.Equal(PieceType.Pawn, board.Get(4, 1).Type);
+      Assert.True(board.Move(3, 0, 4, 1));
+      Assert.Equal(PieceType.Empty, board.Get(3, 0).Type);
+      Assert.Equal(PieceType.Pawn, board.Get(4, 1).Type);
+    }
+
   }
 }
