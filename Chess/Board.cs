@@ -11,8 +11,8 @@ namespace Chess {
 
     public static byte[] BUFFER = new byte[] {
       53,
-      65,
-      36,
+      66,
+      20,
       83,
       102,
       102,
@@ -39,8 +39,8 @@ namespace Chess {
       238,
       238,
       189,
-      201,
-      172,
+      202,
+      156,
       219
     };
 
@@ -50,11 +50,12 @@ namespace Chess {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool IsEmpty(byte start, byte end, sbyte cadence) {
-      var mask = start == 0 || start % 2 == 0 ? 240 : 15;
+      var mask = end == 0 || end % 2 == 0 ? 240 : 15;
       end >>= 1;
       start >>= 1;
-      cadence *= (end - start > 0) ? (sbyte)1 : (sbyte) - 1;
-      for (var i = start + cadence; i <= end && i >= 0; i += cadence) {
+      cadence = (sbyte)Math.Max(cadence >> 1, 1);
+      cadence *= (end - start >= 0) ? (sbyte)1 : (sbyte) - 1;
+      for (var i = start + cadence; i < end; i += cadence) {
         if ((Buffer[i] & mask) != 0) {
           return false;
         }
@@ -85,56 +86,92 @@ namespace Chess {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool IsValid(Piece toMove, Piece moveTo) {
+    private bool isValidDiagonal(byte from, byte to, byte absDiff) {
+      return (absDiff % 9 == 0 || absDiff % 7 == 0) && IsEmpty(from, to, (absDiff % 9 == 0) ? (sbyte)9 : (sbyte)7);
+    }
 
-      if (toMove.Type == PieceType.Empty ||
-        (toMove.Y == moveTo.Y && toMove.X == moveTo.X) ||
-        (toMove.Color == moveTo.Color && moveTo.Type != PieceType.Empty))
-        return false;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private bool IsValidVertical(byte from, byte to, byte absDiff, byte y, byte toY) {
+      return (y ^ toY) == 0 && IsEmpty(from, to, 8);
+    }
 
-      var fromIndex = (byte)(toMove.X * 8 + toMove.Y);
-      var toIndex = (byte)(moveTo.X * 8 + moveTo.Y);
-      var diff = toIndex - fromIndex;
-      var absDiff = (byte)(Math.Abs((byte)diff));
-      var direction = (sbyte)(diff > 0 ? 1 : -1);
-
-      switch (toMove.Type) {
-        case PieceType.King:
-          var isBlackCastle = moveTo.Color == PieceColor.Black && (GameState & 1) == 0 && absDiff == 2 && IsEmpty(fromIndex, (direction > 0) ? (byte)7 : (byte)0, direction);
-          var isWhiteCastle = moveTo.Color == PieceColor.White && (GameState & 2) == 0 && absDiff == 2 && IsEmpty(fromIndex, (direction > 0) ? (byte)56 : (byte)63, direction);
-          return absDiff == 8 || absDiff == 9 || absDiff == 7 || isBlackCastle || isWhiteCastle;
-        case PieceType.Queen:
-          return (toMove.X ^ moveTo.X) == 0 ||
-            (toMove.Y ^ moveTo.Y) == 0 ||
-            absDiff % 9 == 0 ||
-            absDiff % 7 == 0 && IsEmpty(fromIndex, toIndex, (sbyte)(direction * ((absDiff % 9 == 0) ? (sbyte)9 : (sbyte)7)));
-        case PieceType.Rook:
-          return (toMove.X ^ moveTo.X) == 0 || (toMove.Y ^ moveTo.Y) == 0 && IsEmpty(fromIndex, toIndex, (sbyte)(direction * 4));
-        case PieceType.Bishop:
-          return absDiff % 9 == 0 || absDiff % 7 == 0 && IsEmpty(fromIndex, toIndex, (sbyte)(direction * ((absDiff % 9 == 0) ? (sbyte)9 : (sbyte)7)));
-        case PieceType.Knight:
-          return absDiff == 17 || absDiff == 10 || absDiff == 6 || absDiff == 15;
-        case PieceType.Pawn:
-          var firstMoveX = (toMove.Color == PieceColor.Black) ? 1 : 6;
-          var validDiag = moveTo.Type != PieceType.Empty && moveTo.Color != toMove.Color ? diff == 9 || diff == 7 : false;
-          var validVertical = toMove.X != firstMoveX ? diff == direction * 8 : diff == direction * 8 || diff == 16 * direction;
-          return validDiag || validVertical;
-        default:
-          return false;
-      }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private bool IsValidHorizontal(byte from, byte to, byte absDiff, byte x, byte toX) {
+      return (x ^ toX) == 0 && IsEmpty(from, to, 1);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Move(byte x, byte y, byte toX, byte toY) {
-      var currPiece = Get(x, y);
-      var placeToMove = Get(toX, toY);
-      var canMove = IsValid(currPiece, placeToMove);
+      var pieceToMove = Get(x, y);
+      var pieceToTake = Get(toX, toY);
+
+      var fromIndex = (byte)(x * 8 + y);
+      var toIndex = (byte)(toX * 8 + toY);
+      var diff = toIndex - fromIndex;
+      var absDiff = (byte)(Math.Abs((byte)diff));
+      var direction = (sbyte)(diff > 0 ? 1 : -1);
+
+      if (pieceToMove.Type == PieceType.Empty ||
+        (y == toY && x == toX) ||
+        (pieceToMove.Color == pieceToTake.Color && pieceToTake.Type != PieceType.Empty))
+        return false;
+
+      var canMove = true;
+      switch (pieceToMove.Type) {
+        case PieceType.King:
+          if ((toIndex == 62 && (GameState & 2) == 0) || (toIndex == 6 && (GameState & 1) == 0)) {
+            GameState |= (toIndex == 62) ? (byte)2 : (byte)1;
+            Clear(pieceToTake.X, (byte)(pieceToTake.Y + 1));
+            pieceToTake.Y -= 1;
+            Set(pieceToTake);
+            pieceToTake.Y += 1;
+            canMove = true;
+            break;
+          }
+
+          if ((toIndex == 2 && (GameState & 1) == 0) || (toIndex == 58 && (GameState & 2) == 0)) {
+            GameState |= (toIndex == 2) ? (byte)1 : (byte)2;
+            Clear(pieceToTake.X, (byte)(pieceToTake.Y - 2));
+            pieceToTake.Y += 1;
+            Set(pieceToTake);
+            pieceToTake.Y -= 1;
+            canMove = true;
+            break;
+          }
+          canMove = absDiff == 8 || absDiff == 9 || absDiff == 7;
+          break;
+        case PieceType.Queen:
+          canMove = IsValidVertical(fromIndex, toIndex, absDiff, y, toY) ||
+            IsValidHorizontal(fromIndex, toIndex, absDiff, x, toX) ||
+            isValidDiagonal(fromIndex, toIndex, absDiff);
+          break;
+        case PieceType.Rook:
+          canMove = IsValidHorizontal(fromIndex, toIndex, absDiff, x, toX) ||
+            IsValidVertical(fromIndex, toIndex, absDiff, y, toY);
+          break;
+        case PieceType.Bishop:
+          canMove = isValidDiagonal(fromIndex, toIndex, absDiff);
+          break;
+        case PieceType.Knight:
+          canMove = absDiff == 17 || absDiff == 10 || absDiff == 6 || absDiff == 15;
+          break;
+        case PieceType.Pawn:
+          var firstMoveX = (pieceToMove.Color == PieceColor.Black) ? 1 : 6;
+          var validDiag = pieceToMove.Type != PieceType.Empty && pieceToTake.Color != pieceToMove.Color ? diff == 9 || diff == 7 : false;
+          var validVertical = x != firstMoveX ? diff == direction * 8 : diff == direction * 8 || diff == 16 * direction;
+          canMove = validDiag || validVertical;
+          break;
+        default:
+          return false;
+      }
+
       if (canMove) {
         Clear(x, y);
-        currPiece.X = toX;
-        currPiece.Y = toY;
-        Set(currPiece);
+        pieceToMove.X = toX;
+        pieceToMove.Y = toY;
+        Set(pieceToMove);
       }
+
       return canMove;
     }
 

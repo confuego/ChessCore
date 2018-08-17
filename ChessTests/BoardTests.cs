@@ -11,8 +11,8 @@ namespace ChessTests {
       Assert.Equal(PieceType.Rook, board.Get(0, 0).Type);
       Assert.Equal(PieceType.Knight, board.Get(0, 1).Type);
       Assert.Equal(PieceType.Bishop, board.Get(0, 2).Type);
-      Assert.Equal(PieceType.King, board.Get(0, 3).Type);
-      Assert.Equal(PieceType.Queen, board.Get(0, 4).Type);
+      Assert.Equal(PieceType.King, board.Get(0, 4).Type);
+      Assert.Equal(PieceType.Queen, board.Get(0, 3).Type);
       Assert.Equal(PieceType.Bishop, board.Get(0, 5).Type);
       Assert.Equal(PieceType.Knight, board.Get(0, 6).Type);
       Assert.Equal(PieceType.Rook, board.Get(0, 7).Type);
@@ -29,8 +29,8 @@ namespace ChessTests {
       Assert.Equal(PieceType.Rook, board.Get(7, 0).Type);
       Assert.Equal(PieceType.Knight, board.Get(7, 1).Type);
       Assert.Equal(PieceType.Bishop, board.Get(7, 2).Type);
-      Assert.Equal(PieceType.King, board.Get(7, 3).Type);
-      Assert.Equal(PieceType.Queen, board.Get(7, 4).Type);
+      Assert.Equal(PieceType.King, board.Get(7, 4).Type);
+      Assert.Equal(PieceType.Queen, board.Get(7, 3).Type);
       Assert.Equal(PieceType.Bishop, board.Get(7, 5).Type);
       Assert.Equal(PieceType.Knight, board.Get(7, 6).Type);
       Assert.Equal(PieceType.Rook, board.Get(7, 7).Type);
@@ -88,6 +88,37 @@ namespace ChessTests {
       Assert.True(board.Move(3, 0, 4, 1));
       Assert.Equal(PieceType.Empty, board.Get(3, 0).Type);
       Assert.Equal(PieceType.Pawn, board.Get(4, 1).Type);
+    }
+
+    [Fact]
+    public void MoveRook() {
+      var board = new Board();
+
+      Assert.False(board.Move(0, 0, 1, 0));
+      Assert.True(board.Move(1, 0, 3, 0));
+      Assert.Equal(PieceType.Pawn, board.Get(3, 0).Type);
+
+      Assert.True(board.Move(0, 0, 2, 0));
+      Assert.Equal(PieceType.Rook, board.Get(2, 0).Type);
+      Assert.Equal(PieceType.Empty, board.Get(2, 1).Type);
+      Assert.True(board.Move(2, 0, 2, 1));
+      Assert.True(board.Move(2, 1, 5, 1));
+      Assert.True(board.Move(5, 1, 5, 7));
+      Assert.True(board.Move(5, 7, 5, 1));
+      Assert.True(board.Move(5, 1, 6, 1));
+      Assert.True(board.Move(6, 1, 2, 1));
+      Assert.False(board.Move(2, 1, 1, 1));
+      Assert.False(board.Move(2, 1, 0, 1));
+    }
+
+    [Fact]
+    public void MoveQueen() {
+      var board = new Board();
+
+      Assert.Equal(PieceType.Queen, board.Get(0, 3).Type);
+      Assert.False(board.Move(0, 3, 0, 7));
+      Assert.False(board.Move(0, 3, 4, 7));
+      Assert.False(board.Move(0, 3, 3, 0));
     }
 
   }
