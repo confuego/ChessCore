@@ -51,12 +51,8 @@ namespace Chess {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool IsEmpty(byte start, byte end, sbyte cadence) {
       var mask = end == 0 || end % 2 == 0 ? 240 : 15;
-      end >>= 1;
-      start >>= 1;
-      cadence = (sbyte)Math.Max(cadence >> 1, 1);
-      cadence *= (end - start >= 0) ? (sbyte)1 : (sbyte) - 1;
       for (var i = start + cadence; i < end; i += cadence) {
-        if ((Buffer[i] & mask) != 0) {
+        if ((Buffer[i >> 1] & mask) != 0) {
           return false;
         }
       }
@@ -86,18 +82,18 @@ namespace Chess {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool isValidDiagonal(byte from, byte to, byte absDiff) {
-      return (absDiff % 9 == 0 || absDiff % 7 == 0) && IsEmpty(from, to, (absDiff % 9 == 0) ? (sbyte)9 : (sbyte)7);
+    private bool isDiagonal(byte from, byte to, sbyte diff) {
+      return (diff % 9 == 0 || diff % 7 == 0) && IsEmpty(from, to, (sbyte)((diff > 0 ? 1 : -1) * (diff % 9 == 0 ? 9 : 7)));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool IsValidVertical(byte from, byte to, byte absDiff, byte y, byte toY) {
-      return (y ^ toY) == 0 && IsEmpty(from, to, 8);
+    private bool IsVertical(byte from, byte to, byte y, byte toY, sbyte diff) {
+      return (y ^ toY) == 0 && IsEmpty(from, to, diff);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool IsValidHorizontal(byte from, byte to, byte absDiff, byte x, byte toX) {
-      return (x ^ toX) == 0 && IsEmpty(from, to, 1);
+    private bool IsHorizontal(byte from, byte to, byte x, byte toX, sbyte diff) {
+      return (x ^ toX) == 0 && IsEmpty(from, to, diff);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -107,8 +103,8 @@ namespace Chess {
 
       var fromIndex = (byte)(x * 8 + y);
       var toIndex = (byte)(toX * 8 + toY);
-      var diff = toIndex - fromIndex;
-      var absDiff = (byte)(Math.Abs((byte)diff));
+      var diff = (sbyte)(toIndex - fromIndex);
+      var absDiff = (byte)Math.Abs(diff);
       var direction = (sbyte)(diff > 0 ? 1 : -1);
 
       if (pieceToMove.Type == PieceType.Empty ||
@@ -119,8 +115,9 @@ namespace Chess {
       var canMove = true;
       switch (pieceToMove.Type) {
         case PieceType.King:
-          if ((toIndex == 62 && (GameState & 2) == 0) || (toIndex == 6 && (GameState & 1) == 0)) {
-            GameState |= (toIndex == 62) ? (byte)2 : (byte)1;
+          if ((toIndex == 62 && (GameState & (byte)Chess.GameState.WhiteCanCastle) == 0) ||
+            (toIndex == 6 && (GameState & (byte)Chess.GameState.BlackCanCastle) == 0)) {
+            GameState |= (toIndex == 62) ? (byte)Chess.GameState.WhiteCanCastle : (byte)Chess.GameState.BlackCanCastle;
             Clear(pieceToTake.X, (byte)(pieceToTake.Y + 1));
             pieceToTake.Y -= 1;
             Set(pieceToTake);
@@ -129,8 +126,9 @@ namespace Chess {
             break;
           }
 
-          if ((toIndex == 2 && (GameState & 1) == 0) || (toIndex == 58 && (GameState & 2) == 0)) {
-            GameState |= (toIndex == 2) ? (byte)1 : (byte)2;
+          if ((toIndex == 2 && (GameState & (byte)Chess.GameState.BlackCanCastle) == 0) ||
+            (toIndex == 58 && (GameState & (byte)Chess.GameState.WhiteCanCastle) == 0)) {
+            GameState |= (toIndex == 2) ? (byte)Chess.GameState.WhiteCanCastle : (byte)Chess.GameState.BlackCanCastle;
             Clear(pieceToTake.X, (byte)(pieceToTake.Y - 2));
             pieceToTake.Y += 1;
             Set(pieceToTake);
@@ -141,23 +139,23 @@ namespace Chess {
           canMove = absDiff == 8 || absDiff == 9 || absDiff == 7;
           break;
         case PieceType.Queen:
-          canMove = IsValidVertical(fromIndex, toIndex, absDiff, y, toY) ||
-            IsValidHorizontal(fromIndex, toIndex, absDiff, x, toX) ||
-            isValidDiagonal(fromIndex, toIndex, absDiff);
+          canMove = IsVertical(fromIndex, toIndex, y, toY, diff) ||
+            IsHorizontal(fromIndex, toIndex, x, toX, diff) ||
+            isDiagonal(fromIndex, toIndex, diff);
           break;
         case PieceType.Rook:
-          canMove = IsValidHorizontal(fromIndex, toIndex, absDiff, x, toX) ||
-            IsValidVertical(fromIndex, toIndex, absDiff, y, toY);
+          canMove = IsHorizontal(fromIndex, toIndex, x, toX, diff) ||
+            IsVertical(fromIndex, toIndex, y, toY, diff);
           break;
         case PieceType.Bishop:
-          canMove = isValidDiagonal(fromIndex, toIndex, absDiff);
+          canMove = isDiagonal(fromIndex, toIndex, diff);
           break;
         case PieceType.Knight:
           canMove = absDiff == 17 || absDiff == 10 || absDiff == 6 || absDiff == 15;
           break;
         case PieceType.Pawn:
           var firstMoveX = (pieceToMove.Color == PieceColor.Black) ? 1 : 6;
-          var validDiag = pieceToMove.Type != PieceType.Empty && pieceToTake.Color != pieceToMove.Color ? diff == 9 || diff == 7 : false;
+          var validDiag = pieceToTake.Type != PieceType.Empty && pieceToTake.Color != pieceToMove.Color ? diff == 9 || diff == 7 : false;
           var validVertical = x != firstMoveX ? diff == direction * 8 : diff == direction * 8 || diff == 16 * direction;
           canMove = validDiag || validVertical;
           break;
