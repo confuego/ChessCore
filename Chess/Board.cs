@@ -4,48 +4,17 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Chess {
-  public class Board {
+  public class Board : IDisposable {
+
+    private static readonly GameManager GAMEMANAGER = new GameManager();
+
     private byte[] Buffer;
-    private int Offset = 0;
+    private int Offset;
     private byte GameState = 0;
 
-    public static byte[] BUFFER = new byte[] {
-      53,
-      66,
-      20,
-      83,
-      102,
-      102,
-      102,
-      102,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      238,
-      238,
-      238,
-      238,
-      189,
-      202,
-      156,
-      219
-    };
-
     public Board() {
-      Buffer = (byte[])BUFFER.Clone();
+      Offset = GAMEMANAGER.Allocate();
+      Buffer = GAMEMANAGER.BUFFER;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -181,6 +150,10 @@ namespace Chess {
       var nibbleToDecode = Buffer[index] >> loc;
 
       return new Piece(x, y, (PieceColor)((nibbleToDecode >> 3) & 1), (PieceType)(nibbleToDecode & 7));
+    }
+
+    public void Dispose() {
+      GAMEMANAGER.Free(Offset);
     }
   }
 }
